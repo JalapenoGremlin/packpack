@@ -42,7 +42,12 @@ DESCRIBE := $(shell git describe --long --always)
 # Sic: please follow Semantic Versioning (http://semver.org),
 # Debian policies and Fedora guidelines then planning your releases.
 #
-VERSION ?= $(shell echo $(DESCRIBE) | sed -n 's/^\([0-9\.]*\)-\([0-9]*\)-\([a-z0-9]*\)/\1.\2/p')
+#
+# How about following a more rational form
+# Major.Minor[.patch.point.subpoint] is taken from the tag
+# and REVISION is the number of commits past the tag and the git hash
+# VERSION ?= $(shell echo $(DESCRIBE) | sed -n 's/^\([0-9\.]*\)-\([0-9]*\)-\([a-z0-9]*\)/\1.\2/p')
+VERSION ?= $(shell echo $(DESCRIBE) |  sed -r -n "s/($(PRODUCT)-)?v?([0-9\.]*)?-?([0-9]*)-([a-g0-9]*)/\2/p")
 ifeq ($(VERSION),) # Fallback
 VERSION := 0.0.1
 endif
@@ -52,7 +57,13 @@ endif
 #
 # Sic: Both Debian policies and Fedora guidelines discourage 0 value.
 #
-RELEASE ?= 1
+# RELEASE ?= 1
+RELCOUNT ?= $(shell echo $(DESCRIBE) |  sed -r -n "s/($(PRODUCT)-)?v?([0-9\.]*)?-?([0-9]*)-([a-g0-9]*)/\3/p")
+ifeq ($(RELCOUNT),) # Fallback
+RELEASE := 1
+else
+RELEASE := $(shell echo $$(( $(RELCOUNT) + 1 )))
+endif
 
 #
 # git abbreviation with 'g' prefix, 7+ hexadecimal digits
@@ -64,7 +75,7 @@ RELEASE ?= 1
 #   paradox.  The logic suggests to use 12 hexdigits for the Linux
 #   kernel, and 9 to 10 for Git itself.
 #
-ABBREV ?= $(shell echo $(DESCRIBE) | sed -n 's/^\([0-9\.]*\)-\([0-9]*\)-\([a-z0-9]*\)/\3/p')
+ABBREV ?= $(shell echo $(DESCRIBE) | sed -r -n "s/($(PRODUCT)-)?v?([0-9\.]*)?-?([0-9]*)-([a-g0-9]*)/\4/p")
 
 # Name, email and text for changelog entry
 CHANGELOG_NAME ?= PackPack
@@ -83,4 +94,7 @@ TARBALL_COMPRESSOR ?= xz
 #
 # Specifies the number of GNU make jobs (commands) to run simultaneously.
 #
-SMPFLAGS ?= -j$(shell nproc)
+# SMPFLAGS ?= -j$(shell nproc)
+# Mpich2scidb cannot be compiled in parallel
+# So for now, make all the packages suffer
+SMPFLAGS ?= -j1

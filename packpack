@@ -153,6 +153,7 @@ docker run \
         --volume "${PACKDIR}:/pack:ro" \
         --volume "${SOURCEDIR}:/source:ro" \
         --volume "${BUILDDIR}:/build" \
+        --volume "/tmp:/tmp" \
         --env-file ${BUILDDIR}/env \
         --workdir /source \
         --rm=true --tty=true \
@@ -162,8 +163,10 @@ docker run \
         -e TMPDIR=/tmp \
         --volume "${CACHE_DIR}:/cache" \
         ${DOCKER_REPO}:${DOCKER_IMAGE} \
-        make -f /pack/Makefile -C /source BUILDDIR=/build -j "$@"
+        make -f /pack/Makefile -C /source  BUILDDIR=/build -j1 "$@" |& tee ${BUILDDIR}/build.${DOCKER_IMAGE}.log
 retcode=$?
-rm -f ${BUILDDIR}/userwrapper.sh ${BUILDDIR}/env
+if [ 0 -eq ${retcode} ]; then
+  rm -f ${BUILDDIR}/userwrapper.sh ${BUILDDIR}/env
+fi
 exit $retcode
 # vim: filetype=sh tabstop=4 shiftwidth=4 softtabstop=4 expandtab

@@ -97,7 +97,7 @@ endif
 	# Bump version in debian/changelog
 	cd $(BUILDDIR)/$(PRODUCT)-$(VERSION) && \
 		NAME="$(CHANGELOG_NAME)" DEBEMAIL=$(CHANGELOG_EMAIL) \
-		dch -b -v "$(DEB_VERSION)-$(RELEASE)" "$(CHANGELOG_TEXT)"
+		dch -b -v "$(DEB_VERSION)-$(RELEASE)~0$(ABBREV)" "$(CHANGELOG_TEXT)"
 
 $(BUILDDIR)/$(DPKG_ORIG_TARBALL): $(BUILDDIR)/$(TARBALL)
 	# Create a symlink for orig.tar.gz

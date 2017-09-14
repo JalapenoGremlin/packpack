@@ -4,7 +4,7 @@
 
 RPMSPECIN := $(wildcard rpm/*.spec *.spec)
 ifeq ($(RPMSPECIN),)
-$(error Can't find RPM spec in rpm/ directory)
+$(error Cannot find RPM spec in rpm/ directory)
 endif
 $(info Using $(RPMSPECIN) file)
 
@@ -19,7 +19,7 @@ RPMNAME := $(shell rpmspec -P $(RPMSPECIN) | sed -n -e 's/Name:\([\ \t]*\)\(.*\)
 endif
 
 RPMDIST := $(shell rpm -E "%{dist}")
-PKGVERSION := $(VERSION)-$(RELEASE)$(RPMDIST)
+PKGVERSION := $(VERSION)-$(RELEASE)$(RPMDIST).$(ABBREV)
 RPMSPEC := $(RPMNAME).spec
 RPMSRC := $(RPMNAME)-$(PKGVERSION).src.rpm
 PREBUILD := prebuild.sh
@@ -75,9 +75,11 @@ $(BUILDDIR)/$(RPMSPEC): $(RPMSPECIN)
 	@cp $< $@.tmp
 	sed \
 		-e 's/Version:\([ ]*\).*/Version: $(VERSION)/' \
-		-e 's/Release:\([ ]*\).*/Release: $(RELEASE)%{dist}/' \
+		-e 's/Release:\([ ]*\).*/Release: $(RELEASE)%{dist}.$(ABBREV)/' \
 		-e 's/Source0:\([ ]*\).*/Source0: $(TARBALL)/' \
+		-e 's/%setup.* -c.*/SETUP-C/' \
 		-e 's/%setup.*/%setup -q -n $(PRODUCT)-$(VERSION)/' \
+		-e 's/SETUP-C/%setup -c -q -n $(PRODUCT)-$(VERSION)/' \
                 -re 's/(%autosetup.*)( -n \S*)(.*)/\1\3/' \
 		-e '0,/%autosetup.*/ s/%autosetup.*/%autosetup -n $(PRODUCT)-$(VERSION)/' \
                 -e '/%changelog/a\* $(THEDATE) $(CHANGELOG_NAME) <$(CHANGELOG_EMAIL)> - $(VERSION)-$(RELEASE)\n\- $(CHANGELOG_TEXT)\n' \
@@ -86,6 +88,7 @@ $(BUILDDIR)/$(RPMSPEC): $(RPMSPECIN)
 		grep -F "Release: $(RELEASE)" $@.tmp && \
 		grep -F "Source0: $(TARBALL)" $@.tmp && \
 		(grep -F "%setup -q -n $(PRODUCT)-$(VERSION)" $@.tmp || \
+		 grep -F "%setup -c -q -n $(PRODUCT)-$(VERSION)" $@.tmp || \
 		grep -F "%autosetup" $@.tmp) || \
 		(echo "Failed to patch RPM spec" && exit 1)
 	@ mv -f $@.tmp $@
